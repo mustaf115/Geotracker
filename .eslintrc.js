@@ -33,6 +33,8 @@ module.exports = {
         'semi': [
             'error',
             'always'
-        ]
+        ],
+        'react/display-name': 0,
+        'react/prop-types': 0
     }
 };
