@@ -13,7 +13,7 @@ const MainNavigator = createStackNavigator({
 },
 {
   headerMode: 'none',
-  initialRouteName: 'Login'
+  initialRouteName: 'Map'
 }
 );
 

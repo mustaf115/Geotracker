@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Button } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Button, ToastAndroid, NativeModules } from 'react-native';
 
-export default ({navigation: {navigate}}) => {
+const { saveToken, isLogged } = NativeModules.Location;
+
+export default ({navigation: {push}}) => {
   const [ login, setLogin ] = useState('');
   const [ password, setPassword ] = useState('');
 
+  const navigateIfLogged = async () => {
+    if(await isLogged()) push('Map');
+  };
+  navigateIfLogged();
+
   const sendLogin = async (login, password) => {
-    const msg = await fetch('http://192.168.1.12:8080/login', {
+    const res = await fetch('http://192.168.1.12:8080/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({login, password})
     });
-    if(!msg.ok) return;
-    navigate('Map');
+    if(!res.ok) return ToastAndroid.show('Failed login', ToastAndroid.SHORT);
+    saveToken(await res.text());
+    push('Map');
   };
   return (
     <View style={styles.view}>

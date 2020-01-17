@@ -15,7 +15,11 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
-        tools:ignore="GoogleAppIndexingWarning">
+      tools:ignore="GoogleAppIndexingWarning">
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyDt4iaZBWY4Xhx9NpgBsP5YUwzs1bFAfMo"
+      />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

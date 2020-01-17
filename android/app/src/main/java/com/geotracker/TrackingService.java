@@ -3,7 +3,9 @@ package com.geotracker;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -41,6 +43,7 @@ import okhttp3.Response;
 
 public class TrackingService extends Service {
     public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    public static Boolean isTracking = false;
 
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest mLocationRequest;
@@ -50,6 +53,7 @@ public class TrackingService extends Service {
     @Override
     public void onCreate() {
         try {
+            isTracking = true;
             mClient = new OkHttpClient();
 
             mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -88,7 +92,10 @@ public class TrackingService extends Service {
 
     @Override
     public void onDestroy() {
+        isTracking = false;
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        stopForeground(true);
+        stopSelf();
     }
 
     @Nullable
@@ -100,8 +107,8 @@ public class TrackingService extends Service {
     private void createLocationRequest() {
         mLocationRequest = LocationRequest.create();
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setInterval(4000);
+        mLocationRequest.setFastestInterval(2000);
     }
 
     private Notification getNotification() {
@@ -120,9 +127,22 @@ public class TrackingService extends Service {
     }
 
     private void onNewLocation(Location location) throws IOException, JSONException {
+        SharedPreferences sharedPref = this.getSharedPreferences("token", Context.MODE_PRIVATE);
+        String token = sharedPref.getString("token", null);
+        double latitude = location.getLatitude(), longitude = location.getLongitude();
+
         JSONObject json = new JSONObject();
-        json.put("id", 0).put("latitude", location.getLatitude()).put("longitude", location.getLongitude());
+        json
+                .put("id", 0)
+                .put("latitude", latitude)
+                .put("longitude", longitude)
+                .put("token", token);
         post("http://192.168.1.12:8080", json.toString());
+
+        WritableMap params = Arguments.createMap();
+        params.putDouble("latitude", latitude);
+        params.putDouble("longitude", longitude);
+        sendEvent(LocationModule.mReactContext, "NewLocation", params);
     }
 
     private void post(String url, String json){
@@ -143,5 +163,13 @@ public class TrackingService extends Service {
             }
         });
         thread.start();
+    }
+
+    private void sendEvent(ReactContext reactContext,
+                           String eventName,
+                           @Nullable WritableMap params) {
+        reactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, params);
     }
 }
